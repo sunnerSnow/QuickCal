@@ -50,7 +50,7 @@ function CalendarIllustration() {
 
 function SignInView({ notice }: { notice?: string }) {
   return (
-    <main className="mx-auto grid w-full max-w-[1440px] flex-1 gap-8 px-4 pb-9 lg:grid-cols-2 lg:items-center lg:gap-20 lg:px-20 lg:pb-20">
+    <main className="mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-8 px-4 pb-9 lg:grid-cols-2 lg:content-center lg:items-center lg:gap-20 lg:px-20 lg:pb-20">
       <CalendarIllustration />
       <section className="flex max-w-[520px] flex-col gap-6 lg:gap-8">
         <div className="flex flex-col gap-3.5">
@@ -89,7 +89,7 @@ function SignInView({ notice }: { notice?: string }) {
 
 function QuickAddView({ calendars }: { calendars: CalendarSummary[] }) {
   return (
-    <main className="mx-auto grid w-full max-w-[1440px] flex-1 gap-6 px-4 pt-5 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-20 lg:px-20 lg:pt-10 lg:pb-20">
+    <main className="mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-6 px-4 pt-5 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-20 lg:px-20 lg:pt-10 lg:pb-20">
       <section className="flex flex-col gap-7 lg:pt-10">
         <SectionTitle en="Quick Add">快速新增事件</SectionTitle>
         <p className="hidden text-[17px] leading-[1.9] text-muted lg:block">

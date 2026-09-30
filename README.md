@@ -39,6 +39,11 @@ npm run dev                  # http://localhost:3100
 
 溫暖的奶油底配芥末黃重點色，大圓角卡片與膠囊按鈕；標題與欄位標籤採「英文小標＋中文」的雙語寫法。
 
+| 桌面版 | 手機版 |
+| --- | --- |
+| ![桌面版快速新增](docs/screenshots/quick-add-desktop.png) | <img src="docs/screenshots/quick-add-mobile.png" alt="手機版快速新增" width="280"> |
+| ![桌面版登入](docs/screenshots/sign-in-desktop.png) | <img src="docs/screenshots/sign-in-mobile.png" alt="手機版登入" width="280"> |
+
 | 用途 | 色彩 | Tailwind |
 | --- | --- | --- |
 | 背景 | `#FDF7E1` 奶油 | `bg-cream` |

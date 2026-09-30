@@ -7,7 +7,7 @@ import { CategoryPicker } from "./category-picker";
 import { ArrowRightIcon, CheckIcon, ExternalIcon } from "./icons";
 import { FieldLabel, inputBaseClass, inputClass, labelRowClass, pillClass, primaryButtonClass } from "./ui";
 
-const timeInputClass = `${inputBaseClass} h-13 min-w-0 flex-1 border-beige px-2 text-center font-display text-lg`;
+const timeInputClass = `${inputBaseClass} h-13 min-w-0 flex-1 border-beige px-2 text-center font-display text-[17px]`;
 
 const LAST_CALENDAR_KEY = "quickcal:lastCalendarId";
 const DURATIONS = [
@@ -95,7 +95,8 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
           />
         </div>
 
-        <div className="grid gap-[22px] lg:grid-cols-2 lg:gap-6">
+        {/* Time gets the wider column: zh-TW time inputs add a 上午/下午 prefix and a clock button */}
+        <div className="grid gap-[22px] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-6">
           <div className="flex flex-col gap-2 sm:gap-2.5">
             <label htmlFor="date" className={labelRowClass}>
               <FieldLabel en="DATE">日期</FieldLabel>
