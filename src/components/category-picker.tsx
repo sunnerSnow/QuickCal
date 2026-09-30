@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { createCalendarAction } from "@/app/actions";
 import type { CalendarSummary } from "@/lib/google-calendar";
+import { CheckIcon, PlusIcon } from "./icons";
+import { FieldLabel, labelRowClass, pillClass } from "./ui";
 
 type Props = {
   calendars: CalendarSummary[];
@@ -34,18 +36,18 @@ export function CategoryPicker({ calendars, value, timeZone, onChange, onCreated
   }
 
   return (
-    <fieldset className="flex flex-col gap-2">
-      <legend className="mb-1 text-sm text-black/60 dark:text-white/60">分類</legend>
-      <div className="flex flex-wrap gap-2">
+    <fieldset className="flex flex-col gap-3">
+      <legend className={`${labelRowClass} mb-2.5 sm:mb-3`}>
+        <FieldLabel en="CATEGORY">分類</FieldLabel>
+      </legend>
+      <div className="flex flex-wrap gap-2 sm:gap-2.5">
         {calendars.map((c) => {
           const selected = c.id === value;
           return (
             <label
               key={c.id}
-              className={`flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
-                selected
-                  ? "border-blue-600 bg-blue-600/10 font-medium"
-                  : "border-black/15 hover:bg-black/5 dark:border-white/20 dark:hover:bg-white/10"
+              className={`${pillClass} cursor-pointer has-focus-visible:ring-4 has-focus-visible:ring-beige ${
+                selected ? "border-gold bg-cream" : "border-beige bg-white hover:bg-cream"
               }`}
             >
               <input
@@ -58,10 +60,11 @@ export function CategoryPicker({ calendars, value, timeZone, onChange, onCreated
               />
               <span
                 aria-hidden
-                className="size-3 shrink-0 rounded-sm"
+                className="size-3 shrink-0 rounded-[4px]"
                 style={{ backgroundColor: c.backgroundColor ?? "#9e9e9e" }}
               />
               {c.summary}
+              {selected && <CheckIcon size={15} className="text-gold-ink" />}
             </label>
           );
         })}
@@ -69,9 +72,10 @@ export function CategoryPicker({ calendars, value, timeZone, onChange, onCreated
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="rounded-full border border-dashed border-black/30 px-3 py-1.5 text-sm text-black/70 hover:bg-black/5 dark:border-white/30 dark:text-white/70 dark:hover:bg-white/10"
+            className={`${pillClass} border-dashed border-gold bg-transparent hover:bg-cream`}
           >
-            ＋ 新增分類
+            <PlusIcon size={16} />
+            新增分類
           </button>
         )}
       </div>
@@ -93,13 +97,13 @@ export function CategoryPicker({ calendars, value, timeZone, onChange, onCreated
             maxLength={100}
             placeholder="新分類名稱，例如：健身"
             aria-label="新分類名稱"
-            className="min-w-0 flex-1 rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm outline-none focus:border-blue-500 dark:border-white/20"
+            className="h-11 min-w-0 flex-1 rounded-full border-2 border-dashed border-gold bg-white px-4 text-[15px] text-brown outline-none placeholder:text-muted focus:border-solid focus:ring-4 focus:ring-cream"
           />
           <button
             type="button"
             onClick={create}
             disabled={pending || !name.trim()}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+            className="h-11 shrink-0 rounded-full bg-brown px-[18px] text-[15px] text-white transition hover:bg-brown/85 disabled:opacity-50"
           >
             {pending ? "建立中…" : "建立"}
           </button>
@@ -109,13 +113,13 @@ export function CategoryPicker({ calendars, value, timeZone, onChange, onCreated
               setAdding(false);
               setError("");
             }}
-            className="px-2 text-sm text-black/60 hover:underline dark:text-white/60"
+            className="h-11 shrink-0 px-2 text-[15px] text-muted hover:underline"
           >
             取消
           </button>
         </div>
       )}
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="text-sm text-[#9b2c1f]">{error}</p>}
     </fieldset>
   );
 }
