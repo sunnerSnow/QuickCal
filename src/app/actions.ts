@@ -2,7 +2,7 @@
 
 import { auth, signIn, signOut } from "@/auth";
 import { buildEvent } from "@/lib/event-form";
-import { createEvent, GoogleApiError } from "@/lib/google-calendar";
+import { createEvent, GoogleApiError, isAuthError } from "@/lib/google-calendar";
 
 export type CreateEventState =
   | { status: "idle" }
@@ -44,8 +44,11 @@ export async function createEventAction(
     const created = await createEvent(session.accessToken, calendarId, result.event);
     return { status: "success", message: `已新增「${result.event.summary}」`, link: created.htmlLink };
   } catch (error) {
-    if (error instanceof GoogleApiError && error.status === 401) {
-      return { status: "error", message: "登入已過期，請重新登入" };
+    if (isAuthError(error)) {
+      return { status: "error", message: "登入已過期或缺少日曆權限，請重新登入" };
+    }
+    if (error instanceof GoogleApiError && error.status === 403) {
+      return { status: "error", message: "你沒有權限寫入這個日曆" };
     }
     console.error("Failed to create event", error);
     return { status: "error", message: "新增失敗，請稍後再試" };

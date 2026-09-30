@@ -26,6 +26,14 @@ export class GoogleApiError extends Error {
   }
 }
 
+/** Expired token (401) or scopes the user didn't grant (403). */
+export function isAuthError(error: unknown): error is GoogleApiError {
+  return (
+    error instanceof GoogleApiError &&
+    (error.status === 401 || (error.status === 403 && /insufficient authentication scopes/i.test(error.message)))
+  );
+}
+
 async function googleFetch<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,

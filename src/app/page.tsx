@@ -1,7 +1,14 @@
 import { auth } from "@/auth";
 import { signInWithGoogle, signOutAction } from "@/app/actions";
 import { QuickAddForm } from "@/components/quick-add-form";
-import { GoogleApiError, listWritableCalendars, type CalendarSummary } from "@/lib/google-calendar";
+import { isAuthError, listWritableCalendars, type CalendarSummary } from "@/lib/google-calendar";
+
+const SIGN_IN_MESSAGES = {
+  signedOut: "登入 Google 後，就能快速把事件加進你的日曆。",
+  expired: "登入已過期，請重新登入。",
+  missingScope: "QuickCal 需要日曆權限。請重新登入，並在 Google 同意畫面勾選所有日曆相關選項。",
+  failed: "登入失敗，請再試一次。",
+};
 
 function SignInPanel({ message }: { message: string }) {
   return (
@@ -19,25 +26,27 @@ function SignInPanel({ message }: { message: string }) {
   );
 }
 
-export default async function Home() {
-  const session = await auth();
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const [session, { error: signInError }] = await Promise.all([auth(), searchParams]);
 
   let content: React.ReactNode;
   if (!session?.accessToken) {
-    content = <SignInPanel message="登入 Google 後，就能快速把事件加進你的日曆。" />;
+    content = <SignInPanel message={SIGN_IN_MESSAGES[signInError ? "failed" : "signedOut"]} />;
   } else if (session.error) {
-    content = <SignInPanel message="登入已過期，請重新登入。" />;
+    content = (
+      <SignInPanel message={SIGN_IN_MESSAGES[session.error === "MissingScope" ? "missingScope" : "expired"]} />
+    );
   } else {
     let calendars: CalendarSummary[] | null = null;
     try {
       calendars = await listWritableCalendars(session.accessToken);
     } catch (error) {
-      if (!(error instanceof GoogleApiError && error.status === 401)) throw error;
+      if (!isAuthError(error)) throw error;
     }
     content = calendars ? (
       <QuickAddForm calendars={calendars} />
     ) : (
-      <SignInPanel message="無法讀取日曆，請重新登入並允許日曆權限。" />
+      <SignInPanel message={SIGN_IN_MESSAGES.missingScope} />
     );
   }
 

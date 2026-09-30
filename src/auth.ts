@@ -1,18 +1,18 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
-const SCOPES = [
-  "openid",
-  "email",
-  "profile",
+const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
 ];
+const SCOPES = ["openid", "email", "profile", ...CALENDAR_SCOPES];
+
+type AuthError = "RefreshTokenError" | "MissingScope";
 
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
-    error?: "RefreshTokenError";
+    error?: AuthError;
   }
 }
 
@@ -22,11 +22,13 @@ declare module "@auth/core/jwt" {
     access_token?: string;
     expires_at?: number;
     refresh_token?: string;
-    error?: "RefreshTokenError";
+    error?: AuthError;
   }
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Show sign-in failures on the home page instead of Auth.js's error page
+  pages: { error: "/" },
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -45,13 +47,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, account }) {
       // First sign-in: persist Google tokens in the encrypted session cookie
       if (account) {
+        // Google's consent screen lets users untick individual scopes
+        const granted = account.scope?.split(" ") ?? [];
+        // Google reports email/profile under their long URLs, so only check the calendar scopes
+        const missingScope = CALENDAR_SCOPES.some((scope) => !granted.includes(scope));
         return {
           ...token,
           access_token: account.access_token,
           expires_at: account.expires_at,
           refresh_token: account.refresh_token,
+          error: missingScope ? ("MissingScope" as const) : undefined,
         };
       }
+
+      if (token.error === "MissingScope") return token;
 
       // Access token still valid (with a 60s margin)
       if (token.expires_at && Date.now() < (token.expires_at - 60) * 1000) {
