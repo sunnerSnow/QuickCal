@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { createEventAction, type CreateEventState } from "@/app/actions";
 import type { CalendarSummary } from "@/lib/google-calendar";
+import { CategoryPicker } from "./category-picker";
 
 const LAST_CALENDAR_KEY = "quickcal:lastCalendarId";
 const DURATIONS = [
@@ -28,6 +29,7 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
   const [state, formAction, pending] = useActionState<CreateEventState, FormData>(createEventAction, {
     status: "idle",
   });
+  const [calendarList, setCalendarList] = useState(calendars);
   const [calendarId, setCalendarId] = useState(calendars[0]?.id ?? "primary");
   const [allDay, setAllDay] = useState(false);
   const [date, setDate] = useState("");
@@ -142,20 +144,16 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
       <input name="location" placeholder="地點（選填）" className={inputClass} />
       <textarea name="description" placeholder="說明（選填）" rows={2} className={inputClass} />
 
-      <select
-        name="calendarId"
+      <CategoryPicker
+        calendars={calendarList}
         value={calendarId}
-        onChange={(e) => changeCalendar(e.target.value)}
-        className={inputClass}
-        aria-label="行事曆"
-      >
-        {calendars.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.summary}
-            {c.primary ? "（主要）" : ""}
-          </option>
-        ))}
-      </select>
+        timeZone={timeZone}
+        onChange={changeCalendar}
+        onCreated={(calendar) => {
+          setCalendarList((list) => [...list, calendar]);
+          changeCalendar(calendar.id);
+        }}
+      />
 
       <button
         type="submit"

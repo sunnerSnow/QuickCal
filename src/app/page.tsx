@@ -39,7 +39,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   } else {
     let calendars: CalendarSummary[] | null = null;
     try {
-      calendars = await listWritableCalendars(session.accessToken);
+      calendars = (await listWritableCalendars(session.accessToken)).map((c) =>
+        // Google shows the primary calendar under the owner's name, not its email-address id
+        c.primary && session.user?.name ? { ...c, summary: session.user.name } : c,
+      );
     } catch (error) {
       if (!isAuthError(error)) throw error;
     }

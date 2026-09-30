@@ -2,7 +2,13 @@
 
 import { auth, signIn, signOut } from "@/auth";
 import { buildEvent } from "@/lib/event-form";
-import { createEvent, GoogleApiError, isAuthError } from "@/lib/google-calendar";
+import {
+  createCalendar,
+  createEvent,
+  GoogleApiError,
+  isAuthError,
+  type CalendarSummary,
+} from "@/lib/google-calendar";
 
 export type CreateEventState =
   | { status: "idle" }
@@ -10,7 +16,8 @@ export type CreateEventState =
   | { status: "success"; message: string; link: string };
 
 export async function signInWithGoogle() {
-  await signIn("google");
+  // Land on a clean home page, even when signing in from a ?error= URL
+  await signIn("google", { redirectTo: "/" });
 }
 
 export async function signOutAction() {
@@ -52,5 +59,28 @@ export async function createEventAction(
     }
     console.error("Failed to create event", error);
     return { status: "error", message: "新增失敗，請稍後再試" };
+  }
+}
+
+export async function createCalendarAction(
+  name: string,
+  timeZone: string,
+): Promise<{ calendar: CalendarSummary } | { error: string }> {
+  const session = await auth();
+  if (!session?.accessToken || session.error) return { error: "登入已過期，請重新登入" };
+
+  const summary = name.trim();
+  if (!summary) return { error: "請輸入分類名稱" };
+  if (summary.length > 100) return { error: "分類名稱太長" };
+
+  try {
+    const calendar = await createCalendar(session.accessToken, summary, timeZone || "Asia/Taipei");
+    return { calendar };
+  } catch (error) {
+    if (isAuthError(error)) {
+      return { error: "缺少「建立日曆」權限，請登出後重新登入並勾選所有日曆選項" };
+    }
+    console.error("Failed to create calendar", error);
+    return { error: "新增分類失敗，請稍後再試" };
   }
 }

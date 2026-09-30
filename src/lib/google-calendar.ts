@@ -51,20 +51,45 @@ async function googleFetch<T>(accessToken: string, path: string, init?: RequestI
   return body as T;
 }
 
+type CalendarListEntry = {
+  id: string;
+  summary: string;
+  summaryOverride?: string;
+  primary?: boolean;
+  backgroundColor?: string;
+};
+
+function toSummary(entry: CalendarListEntry): CalendarSummary {
+  return {
+    id: entry.id,
+    // summaryOverride is the name the user gave the calendar in their own list
+    summary: entry.summaryOverride ?? entry.summary,
+    primary: Boolean(entry.primary),
+    backgroundColor: entry.backgroundColor,
+  };
+}
+
 /** Calendars the user can add events to, primary first. */
 export async function listWritableCalendars(accessToken: string): Promise<CalendarSummary[]> {
-  const data = await googleFetch<{ items?: Array<CalendarSummary & { accessRole: string }> }>(
+  const data = await googleFetch<{ items?: CalendarListEntry[] }>(
     accessToken,
     "/users/me/calendarList?minAccessRole=writer",
   );
-  return (data.items ?? [])
-    .map(({ id, summary, primary, backgroundColor }) => ({
-      id,
-      summary,
-      primary: Boolean(primary),
-      backgroundColor,
-    }))
-    .sort((a, b) => Number(b.primary) - Number(a.primary));
+  return (data.items ?? []).map(toSummary).sort((a, b) => Number(b.primary) - Number(a.primary));
+}
+
+/** Creates a secondary calendar and returns it as it appears in the user's calendar list. */
+export async function createCalendar(accessToken: string, summary: string, timeZone: string) {
+  const created = await googleFetch<{ id: string }>(accessToken, "/calendars", {
+    method: "POST",
+    body: JSON.stringify({ summary, timeZone }),
+  });
+  // The list entry carries the colour Google assigned
+  const entry = await googleFetch<CalendarListEntry>(
+    accessToken,
+    `/users/me/calendarList/${encodeURIComponent(created.id)}`,
+  );
+  return toSummary(entry);
 }
 
 export async function createEvent(accessToken: string, calendarId: string, event: NewEvent) {

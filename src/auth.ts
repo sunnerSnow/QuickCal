@@ -4,6 +4,8 @@ import Google from "next-auth/providers/google";
 const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+  // Create new calendars ("categories"); only covers calendars QuickCal creates
+  "https://www.googleapis.com/auth/calendar.app.created",
 ];
 const SCOPES = ["openid", "email", "profile", ...CALENDAR_SCOPES];
 
