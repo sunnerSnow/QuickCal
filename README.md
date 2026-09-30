@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QuickCal
 
-## Getting Started
+快速新增 Google 日曆事件的網頁工具（Next.js 16 + Auth.js + Google Calendar API）。
 
-First, run the development server:
+## 開發
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # 填入 Google OAuth 設定
+npm run dev                  # http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Google Cloud 設定
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. 啟用 **Google Calendar API**
+2. Google Auth Platform → 目標對象：外部；測試階段需把登入帳號加入 **Test users**
+3. 建立「網頁應用程式」OAuth 用戶端：
+   - 已授權的 JavaScript 來源：`http://localhost:3100`
+   - 已授權的重新導向 URI：`http://localhost:3100/api/auth/callback/google`
+4. 將 Client ID / Secret 填入 `.env.local`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+申請的權限：`calendar.events`（新增事件）、`calendar.calendarlist.readonly`（列出可寫入的日曆）。
 
-## Learn More
+> 同意畫面維持「測試中」時，Google 發出的 refresh token 7 天後失效，屆時需重新登入。
 
-To learn more about Next.js, take a look at the following resources:
+## 結構
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/auth.ts` — Auth.js 設定，含 access token 自動更新
+- `src/lib/google-calendar.ts` — Calendar API 呼叫
+- `src/lib/event-form.ts` — 表單內容轉換成 Calendar 事件
+- `src/app/actions.ts` — Server Actions（登入、登出、新增事件）
+- `src/components/quick-add-form.tsx` — 快速新增表單
