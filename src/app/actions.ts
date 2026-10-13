@@ -37,7 +37,8 @@ export async function createEventAction(
   const calendarId = text("calendarId") || "primary";
   const result = buildEvent({
     title: text("title"),
-    date: text("date"),
+    startDate: text("startDate"),
+    endDate: text("endDate"),
     allDay: formData.get("allDay") === "on",
     startTime: text("startTime"),
     endTime: text("endTime"),

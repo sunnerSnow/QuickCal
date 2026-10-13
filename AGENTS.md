@@ -22,7 +22,16 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ### 🚨 zh-TW 的 `<input type="time">` 比你想的寬
 中文系統會多出「上午／下午」與時鐘按鈕，窄欄會被截成「下午 05:0」。
-桌面版日期／時間是 `5fr / 6fr`，時間欄刻意比較寬，不要改回等寬。
+日期區間、時間區間各佔一整列（開始 → 結束），不要再塞回同一列的兩欄。
+手機上這兩列的輸入框用 16px（`sm` 以上才 17px），360px 寬才放得下。
+
+### ⚠️ 單欄 grid 的子元素要加 `min-w-0`
+手機版 `main` 是沒有指定欄寬的 grid，欄寬會被表單的 min-content 撐開（例如兩個並排的 date input），整頁出現橫向捲動。
+`QuickAddForm` 的 `<form>` 有 `min-w-0`，不要拿掉。
+
+### 截圖驗證版面
+headless Chrome 視窗最窄約 500px，`--window-size=360,...` 量不到手機寬度；
+要用一個 HTML 頁放 `<iframe style="width:360px">` 再截圖，並加 `--lang=zh-TW` 才會出現「上午／下午」。
 
 ### ⚠️ `flex-1` 的 grid 要加 `content-start`
 `main` 是 `flex-1` 的 grid 時，多餘高度會平均分給每一列，手機上會出現一大段空白。

@@ -2,12 +2,14 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { createEventAction, type CreateEventState } from "@/app/actions";
+import { actualEndDate, addDays } from "@/lib/event-form";
 import type { CalendarSummary } from "@/lib/google-calendar";
 import { CategoryPicker } from "./category-picker";
 import { ArrowRightIcon, CheckIcon, ExternalIcon } from "./icons";
 import { FieldLabel, inputBaseClass, inputClass, labelRowClass, pillClass, primaryButtonClass } from "./ui";
 
-const timeInputClass = `${inputBaseClass} h-13 min-w-0 flex-1 border-beige px-2 text-center font-display text-[17px]`;
+// Slightly smaller on phones so two zh-TW time inputs still fit side by side on a 360px screen
+const rangeInputClass = `${inputBaseClass} h-13 min-w-0 flex-1 border-beige px-1.5 text-center font-display text-base sm:px-2 sm:text-[17px]`;
 
 const LAST_CALENDAR_KEY = "quickcal:lastCalendarId";
 const DURATIONS = [
@@ -16,6 +18,7 @@ const DURATIONS = [
   { label: "2 小時", minutes: 120 },
 ];
 
+const DAY_MS = 86_400_000;
 const pad = (n: number) => String(n).padStart(2, "0");
 const toMinutes = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -25,6 +28,12 @@ const fromMinutes = (total: number) => {
   const wrapped = ((total % 1440) + 1440) % 1440;
   return `${pad(Math.floor(wrapped / 60))}:${pad(wrapped % 60)}`;
 };
+// Date-only strings parse as UTC midnight, so this is a whole number of days
+const dayIndex = (date: string) => Date.parse(date) / DAY_MS;
+/** Minutes since the epoch for a local date and time, so durations can span several days. */
+const toStamp = (date: string, time: string) => dayIndex(date) * 1440 + toMinutes(time);
+const dateFromStamp = (stamp: number) => new Date(Math.floor(stamp / 1440) * DAY_MS).toISOString().slice(0, 10);
+const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
   const [state, formAction, pending] = useActionState<CreateEventState, FormData>(createEventAction, {
@@ -33,7 +42,8 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
   const [calendarList, setCalendarList] = useState(calendars);
   const [calendarId, setCalendarId] = useState(calendars[0]?.id ?? "primary");
   const [allDay, setAllDay] = useState(false);
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [timeZone, setTimeZone] = useState("");
@@ -43,8 +53,10 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
     const now = new Date();
     const nextHour = now.getHours() + 1;
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextHour);
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), nextHour + 1);
     /* eslint-disable react-hooks/set-state-in-effect */
-    setDate(`${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`);
+    setStartDate(localDate(start));
+    setEndDate(localDate(end));
     setStartTime(fromMinutes(nextHour * 60));
     setEndTime(fromMinutes(nextHour * 60 + 60));
     setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -55,11 +67,25 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [calendars]);
 
-  function changeStart(value: string) {
+  const duration =
+    startDate && endDate && startTime && endTime
+      ? toStamp(actualEndDate({ startDate, endDate, startTime, endTime }), endTime) - toStamp(startDate, startTime)
+      : null;
+
+  function setEndAt(stamp: number) {
+    setEndDate(dateFromStamp(stamp));
+    setEndTime(fromMinutes(stamp));
+  }
+
+  function changeStartDate(value: string) {
+    // Move the end date along so a multi-day event keeps its length
+    if (value && startDate && endDate) setEndDate(addDays(endDate, dayIndex(value) - dayIndex(startDate)));
+    setStartDate(value);
+  }
+
+  function changeStartTime(value: string) {
     // Keep the current duration when the start time moves
-    if (startTime && endTime && value) {
-      setEndTime(fromMinutes(toMinutes(value) + toMinutes(endTime) - toMinutes(startTime)));
-    }
+    if (value && duration !== null) setEndAt(toStamp(startDate, value) + duration);
     setStartTime(value);
   }
 
@@ -70,12 +96,10 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
     } catch {}
   }
 
-  const duration = startTime && endTime ? toMinutes(endTime) - toMinutes(startTime) : null;
-
   return (
     <form
       action={formAction}
-      className="flex flex-col gap-6 lg:gap-[26px] lg:rounded-[40px] lg:bg-white lg:px-14 lg:py-12 lg:shadow-[0_20px_50px_rgba(93,55,19,0.08)]"
+      className="flex min-w-0 flex-col gap-6 lg:gap-[26px] lg:rounded-[40px] lg:bg-white lg:px-14 lg:py-12 lg:shadow-[0_20px_50px_rgba(93,55,19,0.08)]"
     >
       <input type="hidden" name="timeZone" value={timeZone} />
 
@@ -95,64 +119,75 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
           />
         </div>
 
-        {/* Time gets the wider column: zh-TW time inputs add a 上午/下午 prefix and a clock button */}
-        <div className="grid gap-[22px] lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-6">
-          <div className="flex flex-col gap-2 sm:gap-2.5">
-            <label htmlFor="date" className={labelRowClass}>
+        {/* Dates and times each get a full row: two zh-TW time inputs (上午/下午 prefix plus a clock button) won't fit in half of one */}
+        <div className="flex flex-col gap-2 sm:gap-2.5">
+          <div className="flex items-center justify-between gap-4">
+            <span className={labelRowClass}>
               <FieldLabel en="DATE">日期</FieldLabel>
-            </label>
-            <div className="flex gap-2.5 lg:gap-3">
+            </span>
+            <label className="flex cursor-pointer items-center gap-2 text-sm sm:text-[15px]">
               <input
-                id="date"
-                type="date"
-                name="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className={`${inputClass} min-w-0`}
+                type="checkbox"
+                name="allDay"
+                checked={allDay}
+                onChange={(e) => setAllDay(e.target.checked)}
+                className="size-[18px] accent-gold"
               />
-              <label className="flex h-13 shrink-0 cursor-pointer items-center gap-2 rounded-[18px] bg-cream px-4 text-[15px]">
-                <input
-                  type="checkbox"
-                  name="allDay"
-                  checked={allDay}
-                  onChange={(e) => setAllDay(e.target.checked)}
-                  className="size-[18px] accent-gold"
-                />
-                全天
-              </label>
+              全天
+            </label>
+          </div>
+          <div className="flex items-center gap-2 lg:gap-2.5">
+            <input
+              type="date"
+              name="startDate"
+              required
+              value={startDate}
+              onChange={(e) => changeStartDate(e.target.value)}
+              className={rangeInputClass}
+              aria-label="開始日期"
+            />
+            <ArrowRightIcon size={18} className="shrink-0 text-gold-ink" />
+            <input
+              type="date"
+              name="endDate"
+              required
+              min={startDate}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className={rangeInputClass}
+              aria-label="結束日期"
+            />
+          </div>
+        </div>
+
+        {!allDay && (
+          <div className="flex flex-col gap-2 sm:gap-2.5">
+            <span className={labelRowClass}>
+              <FieldLabel en="TIME">時間</FieldLabel>
+            </span>
+            <div className="flex items-center gap-2 lg:gap-2.5">
+              <input
+                type="time"
+                name="startTime"
+                required
+                value={startTime}
+                onChange={(e) => changeStartTime(e.target.value)}
+                className={rangeInputClass}
+                aria-label="開始時間"
+              />
+              <ArrowRightIcon size={18} className="shrink-0 text-gold-ink" />
+              <input
+                type="time"
+                name="endTime"
+                required
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className={rangeInputClass}
+                aria-label="結束時間"
+              />
             </div>
           </div>
-
-          {!allDay && (
-            <div className="flex flex-col gap-2 sm:gap-2.5">
-              <span className={labelRowClass}>
-                <FieldLabel en="TIME">時間</FieldLabel>
-              </span>
-              <div className="flex items-center gap-2 lg:gap-2.5">
-                <input
-                  type="time"
-                  name="startTime"
-                  required
-                  value={startTime}
-                  onChange={(e) => changeStart(e.target.value)}
-                  className={timeInputClass}
-                  aria-label="開始時間"
-                />
-                <ArrowRightIcon size={18} className="shrink-0 text-gold-ink" />
-                <input
-                  type="time"
-                  name="endTime"
-                  required
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  className={timeInputClass}
-                  aria-label="結束時間"
-                />
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {!allDay && (
           <div className="-mt-2 grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-2.5">
@@ -164,8 +199,8 @@ export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
                   key={d.minutes}
                   type="button"
                   aria-pressed={selected}
-                  disabled={!startTime}
-                  onClick={() => setEndTime(fromMinutes(toMinutes(startTime) + d.minutes))}
+                  disabled={!startDate || !startTime}
+                  onClick={() => setEndAt(toStamp(startDate, startTime) + d.minutes)}
                   className={`${pillClass} disabled:opacity-40 ${
                     selected ? "border-brown bg-brown text-white" : "border-beige bg-white hover:bg-cream"
                   }`}
