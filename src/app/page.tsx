@@ -89,7 +89,8 @@ function SignInView({ notice }: { notice?: string }) {
 
 function QuickAddView({ calendars }: { calendars: CalendarSummary[] }) {
   return (
-    <main className="mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-6 px-4 pt-5 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-20 lg:px-20 lg:pt-10 lg:pb-20">
+    // relative: keeps the title above the decorative circle, which reaches it on ~430px phones
+    <main className="relative mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-6 px-4 pt-5 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-20 lg:px-20 lg:pt-10 lg:pb-20">
       <section className="flex flex-col gap-7 lg:pt-10">
         <SectionTitle en="Quick Add">快速新增事件</SectionTitle>
         <p className="hidden text-[17px] leading-[1.9] text-muted lg:block">
