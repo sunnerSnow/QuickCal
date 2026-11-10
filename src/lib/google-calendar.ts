@@ -99,3 +99,73 @@ export async function createEvent(accessToken: string, calendarId: string, event
     { method: "POST", body: JSON.stringify(event) },
   );
 }
+
+export type UpcomingEvent = {
+  id: string;
+  calendarId: string;
+  color?: string;
+  title: string;
+  link: string;
+  start: EventTime;
+  end: EventTime;
+  location?: string;
+};
+
+type EventListItem = {
+  id: string;
+  summary?: string;
+  htmlLink: string;
+  start: EventTime;
+  end: EventTime;
+  location?: string;
+};
+
+const startKey = (t: EventTime) => ("dateTime" in t ? t.dateTime : t.date);
+
+/** Events across the given calendars that end after `timeMin` and start before `timeMax`, soonest first. */
+export async function listUpcomingEvents(
+  accessToken: string,
+  calendars: CalendarSummary[],
+  timeMin: string,
+  timeMax: string,
+): Promise<UpcomingEvent[]> {
+  const query = new URLSearchParams({
+    singleEvents: "true",
+    orderBy: "startTime",
+    timeMin,
+    timeMax,
+    // Per calendar; a week with more than 50 events in one calendar gets truncated (no paging)
+    maxResults: "50",
+    fields: "items(id,summary,htmlLink,start,end,location)",
+  });
+  // One calendar failing (unshared or deleted since the list was fetched) shouldn't hide the rest;
+  // only auth errors are reported, so the caller can prompt for a fresh sign-in
+  const settled = await Promise.allSettled(
+    calendars.map(async (calendar) => {
+      const data = await googleFetch<{ items?: EventListItem[] }>(
+        accessToken,
+        `/calendars/${encodeURIComponent(calendar.id)}/events?${query}`,
+      );
+      return (data.items ?? []).map(
+        (item): UpcomingEvent => ({
+          id: `${calendar.id}/${item.id}`,
+          calendarId: calendar.id,
+          color: calendar.backgroundColor,
+          title: item.summary?.trim() || "（無標題）",
+          link: item.htmlLink,
+          start: item.start,
+          end: item.end,
+          ...(item.location && { location: item.location }),
+        }),
+      );
+    }),
+  );
+  const perCalendar: UpcomingEvent[][] = [];
+  for (const result of settled) {
+    if (result.status === "fulfilled") perCalendar.push(result.value);
+    else if (isAuthError(result.reason)) throw result.reason;
+    else console.error("Failed to list events for a calendar", result.reason);
+  }
+  // Google returns dateTime values with varying UTC offsets, so compare instants rather than text
+  return perCalendar.flat().sort((a, b) => Date.parse(startKey(a.start)) - Date.parse(startKey(b.start)));
+}

@@ -5,6 +5,7 @@
 - 標題、日期區間（可跨天）、時間（自動帶入下一個整點，可一鍵選 30 分／1 小時／2 小時）、地點、說明
 - 依日曆顏色選擇分類，也能直接新增分類（建立新的 Google 日曆）
 - 記住上次使用的日曆
+- 列出接下來 7 天的行程（含所有可寫入的日曆），新增後自動更新，點一下在 Google 日曆開啟
 - 桌面與手機版面
 
 ## 開發
@@ -24,7 +25,7 @@ npm run dev                  # http://localhost:3100
    - 已授權的重新導向 URI：`http://localhost:3100/api/auth/callback/google`、`https://<正式網域>/api/auth/callback/google`
 4. 將 Client ID / Secret 填入 `.env.local`
 
-申請的權限：`calendar.events`（新增事件）、`calendar.calendarlist.readonly`（列出可寫入的日曆）、`calendar.app.created`（新增分類，只能存取 QuickCal 建立的日曆）。
+申請的權限：`calendar.events`（新增與讀取事件）、`calendar.calendarlist.readonly`（列出可寫入的日曆）、`calendar.app.created`（新增分類，只能存取 QuickCal 建立的日曆）。
 
 > 同意畫面維持「測試中」時，只有 Test users 名單內的帳號能登入，且 Google 發出的 refresh token 7 天後失效，屆時需重新登入。
 
@@ -64,9 +65,11 @@ npm run dev                  # http://localhost:3100
 - `src/auth.ts` — Auth.js 設定，含 access token 自動更新與權限檢查
 - `src/lib/google-calendar.ts` — Calendar API 呼叫
 - `src/lib/event-form.ts` — 表單內容轉換成 Calendar 事件
-- `src/app/actions.ts` — Server Actions（登入、登出、新增事件、新增分類）
+- `src/app/actions.ts` — Server Actions（登入、登出、新增事件、新增分類、讀取行程）
 - `src/app/page.tsx` — 首頁：登入畫面或快速新增畫面
+- `src/components/quick-add-view.tsx` — 快速新增畫面：表單＋接下來 7 天
 - `src/components/quick-add-form.tsx` — 快速新增表單
+- `src/components/upcoming-events.tsx` — 接下來 7 天的行程清單
 - `src/components/category-picker.tsx` — 分類（日曆）選擇與新增
 - `src/components/ui.tsx` — 共用樣式、雙語標籤與標題
-- `src/components/icons.tsx` — 線條圖示
+- `src/components/icons.tsx` — 線條圖示與 QuickCal 標誌

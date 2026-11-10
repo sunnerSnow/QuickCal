@@ -21,6 +21,25 @@ function Icon({ size = 20, children, ...props }: IconProps) {
   );
 }
 
+/** The filled QuickCal mark, matching `src/app/icon.svg` minus the gold background. */
+export const BrandMark = ({ size = 24, ...props }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden {...props}>
+    <rect x="10" y="14" width="40" height="38" rx="9" fill="#FDF7E1" />
+    <path d="M10 23a9 9 0 0 1 9-9h22a9 9 0 0 1 9 9v6H10z" fill="#5D3713" />
+    <rect x="17.5" y="8" width="6" height="12" rx="3" fill="#5D3713" stroke="#DEAE0B" strokeWidth="2" />
+    <rect x="36.5" y="8" width="6" height="12" rx="3" fill="#5D3713" stroke="#DEAE0B" strokeWidth="2" />
+    <g fill="#DEAE0B" opacity=".6">
+      <rect x="16" y="34" width="6" height="6" rx="1.5" />
+      <rect x="25" y="34" width="6" height="6" rx="1.5" />
+      <rect x="34" y="34" width="6" height="6" rx="1.5" />
+      <rect x="16" y="43" width="6" height="6" rx="1.5" />
+      <rect x="25" y="43" width="6" height="6" rx="1.5" />
+    </g>
+    <circle cx="47" cy="47" r="11" fill="#5D3713" stroke="#DEAE0B" strokeWidth="3" />
+    <path d="M47 41v12M41 47h12" stroke="#FDF7E1" strokeWidth="3.5" strokeLinecap="round" />
+  </svg>
+);
+
 export const CalendarCheckIcon = (props: IconProps) => (
   <Icon {...props}>
     <rect x="3" y="5" width="18" height="16" rx="4" />

@@ -7,7 +7,10 @@ import {
   createEvent,
   GoogleApiError,
   isAuthError,
+  listUpcomingEvents,
+  listWritableCalendars,
   type CalendarSummary,
+  type UpcomingEvent,
 } from "@/lib/google-calendar";
 
 export type CreateEventState =
@@ -60,6 +63,38 @@ export async function createEventAction(
     }
     console.error("Failed to create event", error);
     return { status: "error", message: "新增失敗，請稍後再試" };
+  }
+}
+
+const MAX_RANGE_MS = 8 * 86_400_000;
+
+/** Upcoming events in the user's writable calendars between two instants (ISO strings from the browser's clock). */
+export async function listUpcomingEventsAction(
+  timeMin: string,
+  timeMax: string,
+): Promise<{ events: UpcomingEvent[] } | { error: string }> {
+  const session = await auth();
+  if (!session?.accessToken || session.error) return { error: "登入已過期，請重新登入" };
+
+  const min = Date.parse(timeMin);
+  const max = Date.parse(timeMax);
+  if (Number.isNaN(min) || Number.isNaN(max) || max <= min || max - min > MAX_RANGE_MS) {
+    return { error: "時間範圍不正確" };
+  }
+
+  try {
+    const calendars = await listWritableCalendars(session.accessToken);
+    const events = await listUpcomingEvents(
+      session.accessToken,
+      calendars,
+      new Date(min).toISOString(),
+      new Date(max).toISOString(),
+    );
+    return { events };
+  } catch (error) {
+    if (isAuthError(error)) return { error: "登入已過期或缺少日曆權限，請重新登入" };
+    console.error("Failed to list upcoming events", error);
+    return { error: "讀取行程失敗，請稍後再試" };
   }
 }
 

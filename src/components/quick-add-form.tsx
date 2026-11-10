@@ -35,10 +35,17 @@ const toStamp = (date: string, time: string) => dayIndex(date) * 1440 + toMinute
 const dateFromStamp = (stamp: number) => new Date(Math.floor(stamp / 1440) * DAY_MS).toISOString().slice(0, 10);
 const localDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-export function QuickAddForm({ calendars }: { calendars: CalendarSummary[] }) {
-  const [state, formAction, pending] = useActionState<CreateEventState, FormData>(createEventAction, {
-    status: "idle",
-  });
+type Props = { calendars: CalendarSummary[]; onCreated?: () => void };
+
+export function QuickAddForm({ calendars, onCreated }: Props) {
+  const [state, formAction, pending] = useActionState<CreateEventState, FormData>(
+    async (prev, formData) => {
+      const result = await createEventAction(prev, formData);
+      if (result.status === "success") onCreated?.();
+      return result;
+    },
+    { status: "idle" },
+  );
   const [calendarList, setCalendarList] = useState(calendars);
   const [calendarId, setCalendarId] = useState(calendars[0]?.id ?? "primary");
   const [allDay, setAllDay] = useState(false);

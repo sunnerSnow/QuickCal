@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { signInWithGoogle, signOutAction } from "@/app/actions";
-import { QuickAddForm } from "@/components/quick-add-form";
-import { ArrowRightIcon, CalendarCheckIcon, CheckIcon, InfoIcon, LogoutIcon } from "@/components/icons";
+import { QuickAddView } from "@/components/quick-add-view";
+import { ArrowRightIcon, BrandMark, CalendarCheckIcon, CheckIcon, InfoIcon, LogoutIcon } from "@/components/icons";
 import { primaryButtonClass, SectionTitle } from "@/components/ui";
 import { isAuthError, listWritableCalendars, type CalendarSummary } from "@/lib/google-calendar";
 
@@ -11,13 +11,13 @@ const SIGN_IN_MESSAGES = {
   failed: "登入失敗，請再試一次。",
 };
 
-const FEATURES = ["自動帶入下一個整點的時間", "依日曆顏色分類，也能新增分類", "記住你上次使用的日曆"];
+const FEATURES = ["自動帶入下一個整點的時間", "依日曆顏色分類，也能新增分類", "一眼看到接下來 7 天的行程"];
 
 function Logo() {
   return (
     <div className="flex items-center gap-2.5 sm:gap-3.5">
-      <span className="flex size-[38px] items-center justify-center rounded-full bg-gold sm:size-12">
-        <CalendarCheckIcon className="size-5 sm:size-6" />
+      <span className="flex size-[38px] items-center justify-center rounded-[11px] bg-gold sm:size-12 sm:rounded-[14px]">
+        <BrandMark className="size-[38px] sm:size-12" />
       </span>
       <span className="flex flex-col gap-0.5">
         <span className="font-display text-[22px] leading-none font-bold tracking-wide sm:text-[26px]">QuickCal</span>
@@ -83,23 +83,6 @@ function SignInView({ notice }: { notice?: string }) {
           </p>
         )}
       </section>
-    </main>
-  );
-}
-
-function QuickAddView({ calendars }: { calendars: CalendarSummary[] }) {
-  return (
-    // relative: keeps the title above the decorative circle, which reaches it on ~430px phones
-    <main className="relative mx-auto grid w-full max-w-[1440px] flex-1 content-start gap-6 px-4 pt-5 lg:grid-cols-[440px_minmax(0,1fr)] lg:gap-20 lg:px-20 lg:pt-10 lg:pb-20">
-      <section className="flex flex-col gap-7 lg:pt-10">
-        <SectionTitle en="Quick Add">快速新增事件</SectionTitle>
-        <p className="hidden text-[17px] leading-[1.9] text-muted lg:block">
-          填好標題與時間，
-          <br />
-          一鍵就能把行程放進你的 Google 日曆。
-        </p>
-      </section>
-      <QuickAddForm calendars={calendars} />
     </main>
   );
 }
