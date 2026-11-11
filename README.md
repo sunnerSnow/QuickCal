@@ -73,3 +73,4 @@ npm run dev                  # http://localhost:3100
 - `src/components/category-picker.tsx` — 分類（日曆）選擇與新增
 - `src/components/ui.tsx` — 共用樣式、雙語標籤與標題
 - `src/components/icons.tsx` — 線條圖示與 QuickCal 標誌
+- `docs/brand/` — 頭像（`avatar.svg` 原稿與 1024／512／120 px PNG），裁成圓形也完整
